@@ -1,11 +1,13 @@
 import { Controller, Get, UseGuards, Patch, Body, Query, Param, Delete, NotFoundException, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
-  ApiBody,
+  ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -24,8 +26,10 @@ export class UsersController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ type: getUsersResponseDto })
-  @ApiBody({ type: GetAllUserDto })
+  @ApiQuery({ type: GetAllUserDto })
   @ApiUnauthorizedResponse({ description: 'JWT token is incorrect' })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  @ApiBearerAuth()
   getUsers(@Query() getAllUserDto: GetAllUserDto) {
     return this.usersService.getAllAndCount(getAllUserDto);
   }
@@ -35,6 +39,7 @@ export class UsersController {
   @ApiOkResponse({ type: getUserResponseDto })
   @ApiUnauthorizedResponse({ description: 'JWT token is incorrect' })
   @ApiNotFoundResponse({ description: 'Not found' })
+  @ApiBearerAuth()
   async getUser(@Param('id') id: string) {
     const user = await this.usersService.getById(id);
     if (!user) {
@@ -47,8 +52,9 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiCreatedResponse({ type: getUserResponseDto })
   @ApiUnauthorizedResponse({ description: 'JWT token is incorrect' })
-  @ApiNotFoundResponse({ description: 'Not found' })
   @ApiConflictResponse({ description: 'Email or phone already exists' })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  @ApiBearerAuth()
   async registration(@Body() createUserDto: CreateUserDto) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...result } = await this.usersService.create(createUserDto);
@@ -57,10 +63,12 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ description: 'ok' })
+  @ApiOkResponse({ description: 'Success' })
   @ApiUnauthorizedResponse({ description: 'JWT token is incorrect' })
   @ApiNotFoundResponse({ description: 'Not found' })
   @ApiConflictResponse({ description: 'Email or phone already exists' })
+  @ApiBadRequestResponse({ description: 'Bad request or empty body' })
+  @ApiBearerAuth()
   async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     const user = await this.usersService.getById(id);
     if (!user) {
@@ -72,9 +80,10 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ description: 'ok' })
+  @ApiOkResponse({ description: 'Success' })
   @ApiUnauthorizedResponse({ description: 'JWT token is incorrect' })
   @ApiNotFoundResponse({ description: 'Not found' })
+  @ApiBearerAuth()
   async deleteUser(@Param('id') id: string) {
     const user = await this.usersService.getById(id);
     if (!user) {
